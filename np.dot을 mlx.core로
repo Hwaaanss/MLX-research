@@ -1,0 +1,25 @@
+# 비교를 위해 mlx와 numpy import
+import mlx.core as mx
+import numpy as np
+
+# 1. numpy를 이용하여 0부터 1사이 5by4 행렬과 4by2 행렬 생성
+a = np.random.rand(5, 4)
+b = np.random.rand(4, 2)
+
+# numpy와 mlx를 이용하여 행렬곱
+r1 = np.dot(a, b)
+r2 = mx.matmul(a, b)    # mx.matmul 객체로 ndarray 불가하다는 오류 발생
+print(r1)
+print(r2)
+print(type(a))
+
+# 2. mlx를 이용하여 0부터 1사이 5by4 행렬과 4by2 행렬 생성  
+aa = mx.random.uniform(0,1,shape=(5,4))
+bb = mx.random.uniform(0,1,shape=(4,2))
+
+# numpy와 mlx를 이용하여 행렬곱
+rr1 = np.dot(aa, bb)
+rr2 = mx.matmul(aa,bb)   # mlx.core.array를 np.dot 연산 가능
+print(type(aa))  
+print(rr1)
+print(rr2)
