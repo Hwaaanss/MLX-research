@@ -1,0 +1,63 @@
+# coding: utf-8
+import sys, os
+import mlx.core as mx
+sys.path.append(os.pardir)  # 부모 디렉터리의 파일을 가져올 수 있도록 설정
+import numpy as np
+import matplotlib.pyplot as plt
+from dataset.mnist import load_mnist
+from MLX_two_layer_net import TwoLayerNet
+import time
+
+start_time = time.time()
+
+# 데이터 읽기
+(x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, one_hot_label=True)
+
+network = TwoLayerNet(input_size=784, hidden_size=50, output_size=10)
+
+# 하이퍼파라미터
+iters_num = 10000  
+train_size = x_train.shape[0]
+batch_size = 100  # 미니배치 크기
+learning_rate = 1
+
+train_loss_list = []
+train_acc_list = []
+test_acc_list = []
+
+# 1에폭당 반복 수
+iter_per_epoch = max(train_size / batch_size, 1)
+
+for i in range(iters_num):
+    # 미니배치 획득
+    batch_mask = np.random.choice(train_size, batch_size)   # np.random.choice를 mlx.core로 대체하는 코드는 아직 없는 듯 하여 일단 그대로 받는다.
+    x_batch = x_train[batch_mask]
+    x_batch = mx.array(x_batch)   # x_batch가 ndarray라 mlx.core.matmul로 연산이 안되므로 mx.array로 변환해준다
+    t_batch = t_train[batch_mask]
+    t_batch = mx.array(t_batch)
+    grad = network.gradient(x_batch, t_batch)
+
+    # 매개변수 갱신
+    for key in ('W1', 'b1', 'W2', 'b2'):
+        network.params[key] -= learning_rate * grad[key]
+
+    # 학습 경과 기록
+    loss = network.loss(x_batch, t_batch)
+    train_loss_list.append(loss)
+
+    # 1에폭당 정확도 계산
+    if i % iter_per_epoch == 0:
+        train_acc = network.accuracy(mx.array(x_train), t_train)
+        test_acc = network.accuracy(mx.array(x_test), t_test)
+        train_acc_list.append(train_acc)
+        test_acc_list.append(test_acc)
+        print("train acc, test acc | " + str(train_acc) + ", " + str(test_acc))
+
+# 그래프 그리기
+markers = {'train': 'o', 'test': 's'}
+x = np.arange(len(train_acc_list))
+
+print(time.time()-start_time, 'sec')
+
+# 결론 : 기본적인 연산들은 np를 mx로 변환하면 지원된다. 하지만 np.dot은 mx.matmul로 대체해줘야 하고, matmul의 인수는 ndarray가 안 들어가므로 mx.array()를 통해 데이터 타입을 바꿔주고 진행하면 된다.
+# 아주 작은 신경망이지만 numpy만 사용했을 때보다 학습시간이 10초 이상 감축되는 것을 볼 수 있다.
